@@ -3,8 +3,6 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 from typing import Optional, List
 
-
-
 # Модель для Event
 class Event(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
