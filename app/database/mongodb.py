@@ -17,3 +17,6 @@ def get_incidents_collection():
 
 def get_events_collection():
     return db["events"]
+
+def get_messages_collection():
+    return db["messages"]
