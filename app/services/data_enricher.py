@@ -11,7 +11,7 @@ class DataEnricher:
         netbox_data = await self.get_data_from_netbox(data["ip"])
         netbox_data["message"] = data["message"]
         netbox_data["ip"] = data["ip"]
-
+        
         print(netbox_data)
         
     async def get_data_from_netbox(self,ip: str):
