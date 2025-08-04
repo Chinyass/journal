@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
@@ -23,3 +23,5 @@ class Incident(BaseModel):
                 "last_updated": "2023-01-01T00:00:00"
             }
         }
+
+
