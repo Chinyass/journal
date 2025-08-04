@@ -7,7 +7,7 @@ from typing import Optional, List
 class Event(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
     name: str
-    messages: List[str]
+    message_ids: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=datetime.now(timezone.utc))
 
@@ -16,10 +16,6 @@ class Event(BaseModel):
         json_schema_extra = {
             "example": {
                 "name": "Network Issue",
-                "messages": [
-                    "Port down",
-                    "Interface flapping",
-                    "Link degraded"
-                ]
+                "message_ids": ["607f1f77bcf86cd799439012"]
             }
         }
