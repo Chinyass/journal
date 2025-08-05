@@ -1,26 +1,20 @@
 from app.services.netbox_service import NetboxService
-from app.services.message_service import MessageRepository
-from app.models.messages import Message
-
+from app.models.messages import RawMessage
+from app.models.events import HostData
 
 class DataEnricher:
     def __init__(self):        
         self.netbox = NetboxService()
-        self.message_repo = MessageRepository()
-
-    async def enriche(self, data) -> Message:
-        netbox_data = await self.get_data_from_netbox(data["ip"])
-        netbox_data["text"] = data["message"]
-        netbox_data["ip"] = data["ip"]
-        message_data = Message(**netbox_data)
-        message = await self.message_repo.create(message_data)
-        print(message)
-        return message
         
-    async def get_data_from_netbox(self,ip: str):
+    async def enriche(self, raw_message: RawMessage) -> HostData:
+        enriched_data: HostData = await self.get_data_from_netbox(raw_message.ip)
+        return enriched_data
+    
+    async def get_data_from_netbox(self,ip: str) -> HostData:
         
         data = {
-            "name" : None,
+            "ip" : None,
+            "hostname" : None,
             "model" : None,
             "role" : None,
             "location": None,
@@ -33,7 +27,7 @@ class DataEnricher:
             if not netbox_device:
                 return data
             
-            data["name"] = netbox_device.name
+            data["hostname"] = netbox_device.name
             
             #get model
             if netbox_device.device_type.model != "unknown":
@@ -54,4 +48,4 @@ class DataEnricher:
                 '''
                 pass
         
-        return data
+        return HostData(**data)

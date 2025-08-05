@@ -2,11 +2,12 @@ import json
 import aio_pika
 from aio_pika.abc import AbstractIncomingMessage
 from app.config import settings
-from app.services.data_enricher import DataEnricher
+from app.services.journal_service import JournalService
+from app.models.messages import RawMessage
+
 import asyncio
 
-enricher = DataEnricher()
-
+journal = JournalService()
 
 async def process_message(message: AbstractIncomingMessage):
     async with message.process():
@@ -14,12 +15,8 @@ async def process_message(message: AbstractIncomingMessage):
             data = json.loads(message.body.decode())
             #check requirements fields
             if data.get('host') and data.get('message'):
-
-                #enriche data
-                await enricher.enriche({
-                    'ip': data['host'],
-                    'message' : data['message']
-                })
+                raw_message = RawMessage(ip=data['host'],text=data['message'])
+                await journal.handle(raw_message)
 
         except json.JSONDecodeError as e:
             print(f"Ошибка декодирования JSON: {e}")

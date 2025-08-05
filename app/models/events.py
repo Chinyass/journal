@@ -1,8 +1,10 @@
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime, timezone
 from typing import Optional, List
 from app.models.messages import Message
+from bson import ObjectId
+
 
 class HostData(BaseModel):
     ip: Optional[str] = None
@@ -23,12 +25,10 @@ class Event(HostData):
 
     status: bool = True
 
-    class Config:
-        allow_population_by_field_name = True
-        json_schema_extra = {
-            "example": {
-                "name": "Network Issue",
-                "message_ids": ["607f1f77bcf86cd799439012"]
-            }
-        }
 
+    @field_validator('id', mode='before')
+    def validate_id(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
+    

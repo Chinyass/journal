@@ -17,3 +17,7 @@ class Message(BaseModel):
                 "text": "Interface Gig1/0/1 down"
             }
         }
+
+class RawMessage(BaseModel):
+    ip: str
+    text: str
