@@ -34,5 +34,8 @@ class JournalService:
         event = await self.event_repo.upsert(host_data, message)
         return event
 
-
-
+    async def analyze(self):
+        pass
+        '''
+            TODO
+        '''
