@@ -1,11 +1,9 @@
 from app.services.netbox_service import NetboxService
 
-netbox = NetboxService()
-
 
 class DataEnricher:
     def __init__(self):
-        pass
+        self.netbox = NetboxService()
 
     async def enriche(self, data):
         netbox_data = await self.get_data_from_netbox(data["ip"])
@@ -25,7 +23,7 @@ class DataEnricher:
         }
 
         try:
-            netbox_device = netbox.nb.dcim.devices.get(primary_ip4=f"{ip}/24")
+            netbox_device = self.netbox.nb.dcim.devices.get(primary_ip4=f"{ip}/24")
 
             if not netbox_device:
                 return data
