@@ -10,7 +10,7 @@ class MessageRepository:
     
 
     async def create_message(self, message: Message ) -> Message:
-        message_dict = message.model_dump(by_alias=True, exclude={"id"})
+        message_dict = message.model_dump(by_alias=True)
         res = self.collection.insert_one(message_dict)
         message.id = str(res.inserted_id)
        

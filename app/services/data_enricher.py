@@ -14,7 +14,7 @@ class DataEnricher:
         netbox_data["ip"] = data["ip"]
         message_data = Message(**netbox_data)
         message = await self.message_repo.create_message(message_data)
-        
+        print(message)
         return message
         
     async def get_data_from_netbox(self,ip: str):
