@@ -1,16 +1,21 @@
 from app.services.netbox_service import NetboxService
+from app.services.message_service import MessageRepository
+from app.models.messages import Message
 
 
 class DataEnricher:
-    def __init__(self):
+    def __init__(self):        
         self.netbox = NetboxService()
+        self.message_repo = MessageRepository()
 
     async def enriche(self, data):
         netbox_data = await self.get_data_from_netbox(data["ip"])
-        netbox_data["message"] = data["message"]
+        netbox_data["text"] = data["message"]
         netbox_data["ip"] = data["ip"]
-        
         print(netbox_data)
+        message_data = Message(**netbox_data)
+        message = await self.message_repo.create_message(message_data)
+        print(message)
         
     async def get_data_from_netbox(self,ip: str):
         
