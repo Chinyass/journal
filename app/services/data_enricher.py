@@ -13,7 +13,7 @@ class DataEnricher:
         netbox_data["text"] = data["message"]
         netbox_data["ip"] = data["ip"]
         message_data = Message(**netbox_data)
-        message = await self.message_repo.create_message(message_data)
+        message = await self.message_repo.create(message_data)
         print(message)
         return message
         
