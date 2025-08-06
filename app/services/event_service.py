@@ -57,8 +57,8 @@ class EventRepository(BaseRepository):
                     messages=[message_data],
                     status=status
                 )
-                insert_result = await self.collection.insert_one(new_event.model_dump(by_alias=True))
-                updated_event = await self.collection.find_one({"_id": insert_result.inserted_id})
+                insert_result = self.collection.insert_one(new_event.model_dump(by_alias=True))
+                updated_event = self.collection.find_one({"_id": insert_result.inserted_id})
                 
                 logger.info(f"Created new event: {insert_result.inserted_id}")
 
