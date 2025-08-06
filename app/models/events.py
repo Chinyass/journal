@@ -19,12 +19,10 @@ class Event(HostData):
     id: Optional[str] = Field(None, alias="_id")
     name: Optional[str] = None
     message_ids: List[str] = Field(default_factory=list)
-    messages: List[Message] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     status: bool = True
-
 
     @field_validator('id', mode='before')
     def validate_id(cls, v):

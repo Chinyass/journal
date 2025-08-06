@@ -9,6 +9,7 @@ class Message(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     text: str
+    event_id: Optional[str] = None
 
     class Config:
         allow_population_by_field_name = True

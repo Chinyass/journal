@@ -24,11 +24,11 @@ class JournalService:
             
             # Создаем сообщение
             message = await self.create_message(raw_message)
-            logger.debug(f"Message created: {message.id}")
+            logger.debug(f"Message created: {message}")
             
             # Создаем или обновляем событие
             event = await self.create_event(host_data, message)
-            logger.info(f"Event processed: {event.id if event.id else 'new'}")
+            logger.info(f"Event processed: {event}")
             
             return event
             
