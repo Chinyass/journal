@@ -9,6 +9,7 @@ from bson import ObjectId
 from app.services.message_service import MessageRepository
 
 import logging
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class EventRepository(BaseRepository):
 
             # Find existing event
             existing_event = await self._find_existing_event(host_data.ip, name)
-
+            
             event_data = None
             if existing_event:
                 event_data = await self._update_existing_event(
@@ -42,14 +43,12 @@ class EventRepository(BaseRepository):
                     status
                 )
 
-            # Преобразуем данные в модель Event
-            if isinstance(event_data.get('_id'), ObjectId):
-                event_data['_id'] = str(event_data['_id'])
+            
             
             return Event(**event_data)
         
         except Exception as e:
-            logger.error(f"Error in upsert event: {str(e)}")
+            logger.error(f"Error in upsert event:\n{traceback.format_exc()}")
             raise
     
 
@@ -89,7 +88,7 @@ class EventRepository(BaseRepository):
         
         # Получаем созданный документ
         created_event = self.collection.find_one({"_id": insert_result.inserted_id})
-        
+        print("INSERTED ID", insert_result.inserted_id)
         # Обновляем ссылку на событие в сообщении
         await self.update_message_event_reference(message_id, str(insert_result.inserted_id))
         
@@ -132,7 +131,4 @@ class EventRepository(BaseRepository):
         Обновляет ссылку на событие в сообщении.
         """
         message_repo = MessageRepository()
-        await message_repo.update(
-            {"_id": ObjectId(message_id)},
-            {"$set": {"event_id": event_id}}
-        )
+        message_repo.update_message_event_reference(message_id, event_id )
