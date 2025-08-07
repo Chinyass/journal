@@ -16,7 +16,7 @@ class EventRepository(BaseRepository):
     def __init__(self):
         super().__init__(get_events_collection(), Event)
     
-    async def upsert(self,host_data: HostData, message_data: Message) -> Event:
+    async def upsert(self, host_data: HostData, message_data: Message) -> Event:
         try:
             # Process message text and determine status
             status, processed_text = self._process_message_text(message_data.text)
@@ -27,22 +27,26 @@ class EventRepository(BaseRepository):
             # Find existing event
             existing_event = await self._find_existing_event(host_data.ip, name)
 
+            event_data = None
             if existing_event:
-                updated_event = await self._update_existing_event(
+                event_data = await self._update_existing_event(
                     existing_event["_id"], 
                     message_data.id, 
                     status
                 )
-                
             else:
-                updated_event = await self._create_new_event(
+                event_data = await self._create_new_event(
                     host_data, 
                     name, 
                     message_data.id, 
                     status
                 )
 
-            return Event(**updated_event)
+            # Преобразуем данные в модель Event
+            if isinstance(event_data.get('_id'), ObjectId):
+                event_data['_id'] = str(event_data['_id'])
+            
+            return Event(**event_data)
         
         except Exception as e:
             logger.error(f"Error in upsert event: {str(e)}")
@@ -69,32 +73,39 @@ class EventRepository(BaseRepository):
             "name": name
         })
     
-    async def _create_new_event(
-        self, 
-        host_data: HostData, 
-        name: str, 
-        message_id: str, 
-        status: bool
-    ) -> dict:
+    async def _create_new_event(self, host_data: HostData, name: str, message_id: str, status: bool) -> dict:
         """Create a new event document"""
-        new_event = Event(
+        event_data = {
             **host_data.model_dump(),
-            name=name,
-            message_ids=[str(message_id)],
-            status=status
-        )
-        insert_result = self.collection.insert_one(new_event.model_dump(by_alias=True))
-        self.update_message_event_reference(message_id, str(insert_result.id))
-        return self.collection.find_one({"_id": insert_result.inserted_id})
+            "name": name,
+            "message_ids": [str(message_id)],
+            "status": status,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
+        }
+        
+        # Вставляем новый документ
+        insert_result = self.collection.insert_one(event_data)
+        
+        # Получаем созданный документ
+        created_event = self.collection.find_one({"_id": insert_result.inserted_id})
+        
+        # Обновляем ссылку на событие в сообщении
+        await self.update_message_event_reference(message_id, str(insert_result.inserted_id))
+        
+        # Убедимся, что _id преобразован в строку
+        if created_event and '_id' in created_event:
+            created_event['_id'] = str(created_event['_id'])
+        
+        return created_event
     
-    async def _update_existing_event(
-        self, 
-        event_id: ObjectId, 
-        message_id: str, 
-        status: bool
-    ) -> dict:
+    async def _update_existing_event(self, event_id, message_id: str, status: bool) -> dict:
         """Update existing event with new message and status"""
-        return self.collection.find_one_and_update(
+        # Убедимся, что event_id - ObjectId
+        if not isinstance(event_id, ObjectId):
+            event_id = ObjectId(event_id)
+        
+        updated_event = self.collection.find_one_and_update(
             {"_id": event_id},
             {
                 "$addToSet": {"message_ids": str(message_id)},
@@ -105,6 +116,12 @@ class EventRepository(BaseRepository):
             },
             return_document=True
         )
+        
+        # Убедимся, что _id преобразован в строку
+        if updated_event and '_id' in updated_event:
+            updated_event['_id'] = str(updated_event['_id'])
+        
+        return updated_event
 
     async def update_message_event_reference(
         self, 
@@ -115,7 +132,7 @@ class EventRepository(BaseRepository):
         Обновляет ссылку на событие в сообщении.
         """
         message_repo = MessageRepository()
-        await message_repo.update_one(
+        await message_repo.update(
             {"_id": ObjectId(message_id)},
             {"$set": {"event_id": event_id}}
         )

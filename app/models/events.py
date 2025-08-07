@@ -21,12 +21,17 @@ class Event(HostData):
     message_ids: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
     status: bool = True
 
     @field_validator('id', mode='before')
     def validate_id(cls, v):
+        if v is None:
+            return None
         if isinstance(v, ObjectId):
             return str(v)
-        return v
+        if isinstance(v, dict):  # Обработка случая, когда приходит словарь
+            if '_id' in v:
+                return str(v['_id'])
+            return str(v.get('id'))
+        return str(v)
     
