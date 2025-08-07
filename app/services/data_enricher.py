@@ -13,7 +13,7 @@ class DataEnricher:
     async def get_data_from_netbox(self,ip: str) -> HostData:
         
         data = {
-            "ip" : None,
+            "ip" : ip,
             "hostname" : None,
             "model" : None,
             "role" : None,
