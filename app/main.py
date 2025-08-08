@@ -6,6 +6,7 @@ from threading import Thread
 from app.consumers.rabbit_consumer import start_consumer_thread
 from app.api import incidents
 from app.api import events
+from app.api import messages
 from app.database.mongodb import get_incidents_collection
 from app.websocket.endpoints import websocket_endpoint
 
@@ -57,3 +58,4 @@ app.add_api_websocket_route("/ws", websocket_endpoint)
 # Подключение роутеров
 app.include_router(incidents.router)
 app.include_router(events.router)
+app.include_router(messages.router)

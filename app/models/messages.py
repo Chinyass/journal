@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 
 class Message(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
     
     text: str
     event_id: Optional[str] = None
