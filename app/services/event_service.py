@@ -32,7 +32,6 @@ class EventRepository(BaseRepository):
             if existing_event:
                 event_data = await self._update_existing_event(
                     existing_event["_id"], 
-                    message_data.id, 
                     status
                 )
             else:
@@ -43,8 +42,6 @@ class EventRepository(BaseRepository):
                     status
                 )
 
-            
-            
             return Event(**event_data)
         
         except Exception as e:
@@ -77,8 +74,8 @@ class EventRepository(BaseRepository):
         event_data = {
             **host_data.model_dump(),
             "name": name,
-            "message_ids": [str(message_id)],
             "status": status,
+            "count_message": 1,
             "created_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc)
         }
@@ -88,7 +85,6 @@ class EventRepository(BaseRepository):
         
         # Получаем созданный документ
         created_event = self.collection.find_one({"_id": insert_result.inserted_id})
-        print("INSERTED ID", insert_result.inserted_id)
         # Обновляем ссылку на событие в сообщении
         await self.update_message_event_reference(message_id, str(insert_result.inserted_id))
         
@@ -98,7 +94,7 @@ class EventRepository(BaseRepository):
         
         return created_event
     
-    async def _update_existing_event(self, event_id, message_id: str, status: bool) -> dict:
+    async def _update_existing_event(self, event_id, status: bool) -> dict:
         """Update existing event with new message and status"""
         # Убедимся, что event_id - ObjectId
         if not isinstance(event_id, ObjectId):
@@ -107,10 +103,12 @@ class EventRepository(BaseRepository):
         updated_event = self.collection.find_one_and_update(
             {"_id": event_id},
             {
-                "$addToSet": {"message_ids": str(message_id)},
                 "$set": {
                     "updated_at": datetime.now(timezone.utc),
                     "status": status
+                },
+                "$inc": {
+                    "count_message": 1
                 }
             },
             return_document=True
