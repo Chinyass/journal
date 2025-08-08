@@ -12,11 +12,23 @@ async def create_incident(incident: Incident):
     return await upsert_incident(incident.model_dump())
 '''
 
-@router.get("/", response_model=list)
+@router.get("/", response_model=dict)
 async def list_events(
     page: int = Query(1, ge=1),
-    per_page: int = Query(10, le=100)
+    per_page: int = Query(10, le=100),
+    status: Optional[bool] = None,
 ):
-    events = await event_repo.get_list()
-
-    return events
+    total = await event_repo.get_count(status=status)
+    events = await event_repo.get_list(
+        skip=(page - 1) * per_page,
+        limit=per_page,
+        status=status,
+    )
+    
+    return {
+        "items": events,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": (total + per_page - 1) // per_page
+    }

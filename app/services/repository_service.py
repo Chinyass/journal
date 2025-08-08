@@ -22,11 +22,11 @@ class BaseRepository:
         return self.model(**item_data) if item_data else None
     
     async def get_list(
-            self,
-            skip: int = 0,
-            limit: int = 100,
-            text_search: Optional[str] = None,
-            **filters
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        text_search: Optional[str] = None,
+        **filters
     ) -> List[T]:
         query = {}
 
@@ -37,8 +37,16 @@ class BaseRepository:
             if value is not None:
                 query[field] = value
         
-        cursor = self.collection.find(query).skip(skip).limit(limit)
+        # Добавляем сортировку по убыванию по полю updated_at
+        cursor = self.collection.find(query).sort("updated_at", -1).skip(skip).limit(limit)
         return [self.model(**item) for item in cursor]
+    
+    async def get_count(self, **filters) -> int:
+        query = {}
+        for field, value in filters.items():
+            if value is not None:
+                query[field] = value
+        return self.collection.count_documents(query)
     
     async def update(self, id: str, update_data: dict) -> Optional[T]:
         update_data = {k: v for k, v in update_data.items() if v is not None}
