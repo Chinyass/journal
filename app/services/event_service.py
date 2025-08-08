@@ -3,11 +3,11 @@ from app.database.mongodb import get_events_collection
 from app.models.events import Event
 from app.models.events import HostData
 from app.models.messages import Message
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, Tuple
 from bson import ObjectId
 from app.services.message_service import MessageRepository
-
+import pytz
 import logging
 import traceback
 
@@ -52,7 +52,7 @@ class EventRepository(BaseRepository):
     async def _identify_event(self, model: str, text: str) -> str:
         """Identify and return event name based on model and message text"""
         # TODO: Implement more sophisticated event identification logic
-        return text[:100]
+        return text[:300]
     
 
     def _process_message_text(self, text: str) -> Tuple[bool, str]:
@@ -71,13 +71,14 @@ class EventRepository(BaseRepository):
     
     async def _create_new_event(self, host_data: HostData, name: str, message_id: str, status: bool) -> dict:
         """Create a new event document"""
+
         event_data = {
             **host_data.model_dump(),
             "name": name,
             "status": status,
             "count_message": 1,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
         }
         
         # Вставляем новый документ
@@ -96,6 +97,7 @@ class EventRepository(BaseRepository):
     
     async def _update_existing_event(self, event_id, status: bool) -> dict:
         """Update existing event with new message and status"""
+
         # Убедимся, что event_id - ObjectId
         if not isinstance(event_id, ObjectId):
             event_id = ObjectId(event_id)
@@ -104,7 +106,7 @@ class EventRepository(BaseRepository):
             {"_id": event_id},
             {
                 "$set": {
-                    "updated_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(),
                     "status": status
                 },
                 "$inc": {

@@ -1,8 +1,7 @@
 
 from pydantic import BaseModel, Field, field_validator
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, List
-from app.models.messages import Message
 from bson import ObjectId
 
 
@@ -18,8 +17,8 @@ class HostData(BaseModel):
 class Event(HostData):
     id: Optional[str] = Field(None, alias="_id")
     name: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
     status: bool = True
     count_message: int = 1
 
