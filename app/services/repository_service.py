@@ -1,6 +1,6 @@
 from typing import Optional, List, Type, TypeVar
 from bson import ObjectId
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from pymongo.collection import Collection
 
@@ -41,6 +41,48 @@ class BaseRepository:
         cursor = self.collection.find(query).sort("updated_at", -1).skip(skip).limit(limit)
         return [self.model(**item) for item in cursor]
     
+    async def get_by_time_period(
+        self,
+        time_field: str = "created_at",
+        hours: Optional[int] = None,
+        days: Optional[int] = None,
+        minutes: Optional[int] = None,
+        sort_desc: bool = True,
+        **filters
+    ) -> List[T]:
+        """
+        Получение элементов за определенный период времени.
+        
+        Args:
+            time_field: Поле, по которому фильтруется время (по умолчанию "updated_at")
+            hours: Количество часов назад
+            days: Количество дней назад
+            minutes: Количество минут назад
+            sort_desc: Сортировать по убыванию времени (новые сначала)
+            filters: Дополнительные фильтры
+            
+        Returns:
+            List[T]: Список элементов, созданных/обновленных за указанный период
+        """
+        query = {**filters}
+        
+        now = datetime.now()
+        if minutes is not None:
+            start_time = now - timedelta(minutes=minutes)
+        elif hours is not None:
+            start_time = now - timedelta(hours=hours)
+        elif days is not None:
+            start_time = now - timedelta(days=days)
+        else:
+            # Если период не указан, возвращаем пустой список
+            return []
+        
+        query[time_field] = {"$gte": start_time}
+        
+        sort_order = -1 if sort_desc else 1
+        cursor = self.collection.find(query).sort(time_field, sort_order)
+        return [self.model(**item) for item in cursor]
+    
     async def get_count(self, **filters) -> int:
         query = {}
         for field, value in filters.items():
@@ -57,7 +99,7 @@ class BaseRepository:
         if not update_data:
             return None
         
-        update_data["updated_at"] = datetime.now(timezone.utc)
+        update_data["updated_at"] = datetime.now()
 
         result = self.collection.find_one_and_update(
             {"_id": ObjectId(id)},

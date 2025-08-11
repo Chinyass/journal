@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone
-
+from bson import ObjectId
 
 class Message(BaseModel):
     id: Optional[str] = Field(None, alias="_id")
@@ -11,6 +11,19 @@ class Message(BaseModel):
     text: str
     event_id: Optional[str] = None
 
+    @field_validator('id', 'event_id', mode='before')
+    def validate_id(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, ObjectId):
+            return str(v)
+        if isinstance(v, dict):  # Обработка случая, когда приходит словарь
+            if '_id' in v:
+                return str(v['_id'])
+            return str(v.get('id'))
+        return str(v)
+    
+    
     class Config:
         allow_population_by_field_name = True
         json_schema_extra = {
@@ -22,3 +35,8 @@ class Message(BaseModel):
 class RawMessage(BaseModel):
     ip: str
     text: str
+
+# Модель для ответа
+class MessageCountResponse(BaseModel):
+    timestamp: datetime
+    count: int
