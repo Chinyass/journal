@@ -22,10 +22,13 @@ class DataEnricher:
         }
 
         try:
-            netbox_device = self.netbox.nb.dcim.devices.get(primary_ip4=f"{ip}/24")
+            ipam_ip = self.netbox.nb.ipam.ip_addresses.get(address=ip)
+            netbox_device = None
+            if ipam_ip and ipam_ip.assigned_object:
+                netbox_device = self.netbox.nb.dcim.devices.get(id=ipam_ip.assigned_object.device.id)
 
             if not netbox_device:
-                return data
+                return HostData(**data)
             
             data["hostname"] = netbox_device.name
             
@@ -41,6 +44,7 @@ class DataEnricher:
             if netbox_device.site.name != "unknown":
                 data["location"] = netbox_device.site.name
             
+
         except Exception as e:
             if 'code 400' in str(e):
                 '''
