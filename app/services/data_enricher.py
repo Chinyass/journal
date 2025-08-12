@@ -44,6 +44,10 @@ class DataEnricher:
             if netbox_device.site.name != "unknown":
                 data["location"] = netbox_device.site.name
             
+            #get services
+            tags = netbox_device.tags
+            for tag in tags:
+                data["services"].append(tag.name)
 
         except Exception as e:
             if 'code 400' in str(e):
