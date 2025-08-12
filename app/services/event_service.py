@@ -31,6 +31,7 @@ class EventRepository(BaseRepository):
             event_data = None
             if existing_event:
                 event_data = await self._update_existing_event(
+                    host_data,
                     existing_event["_id"], 
                     status
                 )
@@ -95,17 +96,21 @@ class EventRepository(BaseRepository):
         
         return created_event
     
-    async def _update_existing_event(self, event_id, status: bool) -> dict:
+    async def _update_existing_event(self, host_data: HostData, event_id, status: bool) -> dict:
         """Update existing event with new message and status"""
 
         # Убедимся, что event_id - ObjectId
         if not isinstance(event_id, ObjectId):
             event_id = ObjectId(event_id)
         
+        # Получаем данные из host_data в виде словаря
+        host_data_dict = host_data.model_dump()
+
         updated_event = self.collection.find_one_and_update(
             {"_id": event_id},
             {
                 "$set": {
+                    **host_data_dict,
                     "updated_at": datetime.now(),
                     "status": status
                 },
