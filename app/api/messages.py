@@ -35,6 +35,7 @@ async def get_messages_count_by_time(
     interval: str = Query("5m", description="Grouping interval (e.g. '1m', '5m', '15m')"),
     start_time: Optional[datetime] = Query(None, description="Custom start time"),
     end_time: Optional[datetime] = Query(None, description="Custom end time (default now)"),
+    service: Optional[str] = Query(None, description="Service filter")
 ):
     """
     Get message counts grouped by time intervals.
@@ -49,10 +50,12 @@ async def get_messages_count_by_time(
             time_range=time_range,
             interval=interval,
             start_time=start_time,
-            end_time=end_time
+            end_time=end_time,
+            service=service
         )
         return results
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail="Internal server error")

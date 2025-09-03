@@ -29,7 +29,8 @@ class MessageRepository(BaseRepository):
         time_range: str = "1d",  # пример: "1h", "2h", "1d", "3d" и т.д.
         interval: str = "5m",    # пример: "1m", "5m", "15m", "1h" и т.д.
         start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None
+        end_time: Optional[datetime] = None,
+        service: Optional[str] = None
     ) -> List[Dict[str, int]]:
         """
         Возвращает количество сообщений по временным интервалам.
@@ -39,6 +40,7 @@ class MessageRepository(BaseRepository):
             interval: Интервал группировки (например, "5m" - каждые 5 минут)
             start_time: Начальная дата/время (если не указано, вычисляется из time_range)
             end_time: Конечная дата/время (по умолчанию текущее время)
+            service: Фильтрация по полю service в events
             
         Returns:
             Список словарей с ключами "timestamp" и "count"
@@ -75,6 +77,7 @@ class MessageRepository(BaseRepository):
         else:
             raise ValueError(f"Unknown interval unit: {interval_unit}")
         
+        print("SERVICE: ", service)
         # Создаем агрегационный pipeline
         pipeline = [
             {
@@ -84,20 +87,46 @@ class MessageRepository(BaseRepository):
                         "$lte": end_time
                     }
                 }
-            },
+            }
+        ]
+        
+        if service:
+            pipeline.extend([
+                {
+                    "$lookup": {
+                        "from": "events",
+                        "localField": "event_id",
+                        "foreignField": "_id",
+                        "as": "event_data"
+                    }
+                },
+                {
+                    "$unwind": "$event_data"  # Разворачиваем массив в объект
+                },
+                {
+                    "$match": {
+                        "event_data.services": service
+                    }
+                },
+                {
+                    "$unset": "event_data"  # Удаляем временное поле
+                }
+            ])
+
+        pipeline.extend([
             {
                 "$group": {
                     "_id": {
                         "$subtract": [
-                            { "$toLong": "$created_at" },
-                            { "$mod": [{ "$toLong": "$created_at" }, interval_seconds * 1000] }
+                            {"$toLong": "$created_at"},
+                            {"$mod": [{"$toLong": "$created_at"}, interval_seconds * 1000]}
                         ]
                     },
-                    "count": { "$sum": 1 }
+                    "count": {"$sum": 1}
                 }
             },
             {
-                "$sort": { "_id": 1 }
+                "$sort": {"_id": 1}
             },
             {
                 "$project": {
@@ -108,7 +137,8 @@ class MessageRepository(BaseRepository):
                     "_id": 0
                 }
             }
-        ]
+        ])
+
         
         # Выполняем запрос
         cursor = self.collection.aggregate(pipeline)

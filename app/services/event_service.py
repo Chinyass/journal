@@ -4,10 +4,9 @@ from app.models.events import Event
 from app.models.events import HostData
 from app.models.messages import Message
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from bson import ObjectId
 from app.services.message_service import MessageRepository
-import pytz
 import logging
 import traceback
 
@@ -17,6 +16,50 @@ class EventRepository(BaseRepository):
     def __init__(self):
         super().__init__(get_events_collection(), Event)
     
+    async def get_list(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        text_search: Optional[str] = None,
+        service_filter: Optional[str] = None,
+        **filters
+    ) -> List[Event]:
+        query = {}
+
+        if text_search:
+            query["$text"] = {"$search": text_search}
+        
+        if service_filter:
+            query["services"] = {"$regex": service_filter, "$options": "i"}  # case-insensitive search
+        
+        for field, value in filters.items():
+            if value is not None:
+                query[field] = value
+        
+        cursor = self.collection.find(query).sort("updated_at", -1).skip(skip).limit(limit)
+        return [self.model(**item) for item in cursor]
+    
+    async def get_count(
+        self,
+        text_search: Optional[str] = None,
+        service_filter: Optional[str] = None,
+        **filters
+    ) -> int:
+        query = {}
+        
+        if text_search:
+            query["$text"] = {"$search": text_search}
+        
+        if service_filter:
+            query["services"] = {"$regex": service_filter, "$options": "i"}
+        
+        for field, value in filters.items():
+            if value is not None:
+                query[field] = value
+        
+        return self.collection.count_documents(query)
+    
+
     async def upsert(self, host_data: HostData, message_data: Message) -> Event:
         try:
             # Process message text and determine status

@@ -17,12 +17,14 @@ async def list_events(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, le=100),
     status: Optional[bool] = None,
+    service: Optional[str] = None
 ):
-    total = await event_repo.get_count(status=status)
+    total = await event_repo.get_count(status=status, service_filter=service)
     events = await event_repo.get_list(
         skip=(page - 1) * per_page,
         limit=per_page,
         status=status,
+        service_filter=service,  # Передаем параметр фильтрации
     )
     
     return {
